@@ -7,7 +7,3 @@ galaxy_info:
     - node.js
     - node
     - lts
-  platforms:
-    - name: Linux
-      versions:
-        - x64

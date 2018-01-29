@@ -1,0 +1,6 @@
+node_lts_url_scheme: https
+node_lts_dist: nodejs.org/dist
+node_lts_base_url: "{{node_lts_url_scheme}}://{{node_lts_dist}}"
+
+node_lts_update_npm: yes
+node_lts_npm_env: {}

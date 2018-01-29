@@ -1,0 +1,71 @@
+- name: get versions info
+  uri:
+    method: GET
+    return_content: yes
+    url: "{{node_lts_base_url}}/index.json"
+  register: node_versions
+  delegate_to: 127.0.0.1
+  become: no
+
+- set_fact:
+    node_lts_current_lts: "{{item}}"
+    node_lts_did_download: false
+    node_lts_did_install: false
+  with_items: "{{node_versions.json|json_query('[?lts].version|[0]')}}"
+
+- name: check for installed node
+  stat:
+    path: /usr/local/bin/node
+  register: node_lts_current_binary
+
+- name: get current installed node version
+  command: /usr/local/bin/node --version
+  when: node_lts_current_binary.stat.exists
+  changed_when: node_lts_current_version.rc != 0
+  register: node_lts_current_version
+
+- set_fact:
+    node_lts_installed_version: "{{node_lts_current_version.stdout}}"
+  when: node_lts_current_binary.stat.exists
+
+- block:
+    - name: download node
+      unarchive:
+        src: "{{node_lts_base_url}}/{{node_lts_current_lts}}/node-{{node_lts_current_lts}}-linux-x64.tar.gz"
+        remote_src: yes
+        dest: /tmp
+        creates: "/tmp/node-{{node_lts_current_lts}}-linux-x64"
+      register: node_lts_download
+
+    - set_fact:
+        node_lts_did_download: "{{node_lts_download.changed}}"
+  when: node_lts_current_binary.stat.exists == false or
+    (
+      node_lts_current_binary.stat.exists and
+      (node_lts_current_version.stdout != node_lts_current_lts)
+    )
+
+- name: install node
+  command: "cp -Rf /tmp/node-{{node_lts_current_lts}}-linux-x64/{{item}} /usr/local"
+  when: node_lts_did_download
+  register: node_lts_did_install
+  with_items:
+    - bin
+    - include
+    - lib
+    - share
+
+- name: remove unpacked files
+  file:
+    state: absent
+    path: "/tmp/node-{{node_lts_current_lts}}-linux-x64"
+  when: node_lts_did_download and node_lts_did_install
+
+- name: update npm
+  npm:
+    name: npm
+    executable: /usr/local/bin/npm
+    production: yes
+    global: yes
+  environment: "{{ansible_env|combine(node_lts_npm_env)}}"
+  when: node_lts_update_npm

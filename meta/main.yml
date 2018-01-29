@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  author: jsumners
+  description: Installs the latest Node.js LTS release and npm.
+  license: MIT
+  galaxy_tags:
+    - node.js
+    - node
+    - lts
+  platforms:
+    - name: Linux
+      versions:
+        - x64

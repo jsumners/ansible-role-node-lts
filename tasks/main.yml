@@ -5,6 +5,7 @@
     url: "{{node_lts_base_url}}/index.json"
   register: node_versions
   delegate_to: 127.0.0.1
+  run_once: yes
   become: no
 
 - set_fact:
